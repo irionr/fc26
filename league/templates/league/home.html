@@ -1,0 +1,27 @@
+{% extends 'league/base.html' %}
+{% load league_tags %}
+{% block content %}
+<div class="card">
+  <h2>Classifica Elo</h2>
+  <p style="color:var(--muted)">Come negli scacchi: tutti partono da {{ elo_start }}; battere un avversario forte fa guadagnare più punti che battere uno debole (K = {{ elo_k }}, pareggio = ½ vittoria). Nel 2v2 conta la media dei rating della coppia e ogni giocatore riceve lo stesso scambio di punti.<br>Il <strong>?</strong> indica un rating provvisorio (meno di {{ min_games }} partite).</p>
+  <table>
+    <tr><th>#</th><th>Giocatore</th><th class="num">Elo</th><th class="num" title="Variazione dopo l'ultima partita">Ultima</th><th class="num" title="Rating massimo raggiunto">Max</th><th class="num" title="Partite giocate">G</th></tr>
+    {% for r in ratings %}
+    <tr><td>{{ forloop.counter }}</td><td>{% player_name r.player %}{% if r.donkey %} <span class="donkey" tabindex="0" data-msg="Che ciuhooooo!">🫏</span>{% endif %}</td>
+      <td class="num"><strong>{{ r.rating|floatformat:0 }}</strong>{% if r.provisional %}<span title="Rating provvisorio"> ?</span>{% endif %}</td>
+      <td class="num">{% if r.last is None %}–{% elif r.last >= 0 %}<span class="win">+{{ r.last|floatformat:0 }}</span>{% else %}<span style="color:var(--danger)">{{ r.last|floatformat:0 }}</span>{% endif %}</td>
+      <td class="num">{{ r.peak|floatformat:0 }}</td><td class="num">{{ r.played }}</td></tr>
+    {% empty %}<tr><td colspan="6">Nessun giocatore. <a href="{% url 'players' %}">Aggiungine uno</a>.</td></tr>{% endfor %}
+  </table>
+  <p style="color:var(--muted);font-size:.85rem"><strong>🫏</strong> = ultimo in classifica · <strong>Livelli</strong> (in base alla % dei punti disponibili, vedi <a href="{% url 'points' %}">Punti</a>): {{ badge_provisional.0 }} {{ badge_provisional.1 }} (meno di {{ badge_min_games }} partite, livello provvisorio) · {% for min, icon, title in badge_tiers %}{{ icon }} {{ title }} ({{ min }}%+){% if not forloop.last %} · {% endif %}{% endfor %}</p>
+</div>
+
+<div class="card">
+  <h2>Prossime partite</h2>
+  <table>{% for m in upcoming %}{% include 'league/_match_row.html' %}{% empty %}<tr><td>Nessuna partita in programma.</td></tr>{% endfor %}</table>
+</div>
+<div class="card">
+  <h2>Ultimi risultati</h2>
+  <table>{% for m in recent %}{% include 'league/_match_row.html' %}{% empty %}<tr><td>Ancora nessun risultato.</td></tr>{% endfor %}</table>
+</div>
+{% endblock %}

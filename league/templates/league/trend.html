@@ -1,0 +1,77 @@
+{% extends 'league/base.html' %}
+{% load league_tags %}
+{% block content %}
+<div class="card">
+  <h2>Andamento nel tempo</h2>
+  <p style="color:var(--muted)">Per ogni giocatore, partita dopo partita (1v1 e 2v2). Una curva che sale = sta migliorando.
+    100% = ha vinto tutte le partite.</p>
+  <p>
+    <label><input type="radio" name="metric" value="form_pct" checked> Forma (ultime 5 partite)</label>
+    &nbsp;
+    <label><input type="radio" name="metric" value="cum_pct"> Media complessiva</label>
+  </p>
+  <p id="legend"></p>
+  <svg id="chart" viewBox="0 0 800 380" style="width:100%;height:auto"></svg>
+  <p id="empty" style="display:none">Ancora nessuna partita giocata.</p>
+</div>
+{{ series|json_script:"series-data" }}
+<script>
+(function () {
+  var series = JSON.parse(document.getElementById('series-data').textContent)
+    .filter(function (s) { return s.results.length; });
+  var colors = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7', '#14b8a6', '#ec4899', '#eab308'];
+  var svg = document.getElementById('chart'), legend = document.getElementById('legend');
+  var hidden = {}, NS = 'http://www.w3.org/2000/svg';
+  var W = 800, H = 380, L = 45, R = 15, T = 15, B = 40;
+  if (!series.length) { svg.style.display = 'none'; document.getElementById('empty').style.display = ''; return; }
+  var maxN = Math.max.apply(null, series.map(function (s) { return s.results.length; }));
+
+  function el(name, attrs, text) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  function x(i) { return L + (maxN === 1 ? (W - L - R) / 2 : (i - 1) * (W - L - R) / (maxN - 1)); }
+  function y(v) { return T + (100 - v) * (H - T - B) / 100; }
+
+  series.forEach(function (s, i) {
+    s.color = colors[i % colors.length];
+    var lab = document.createElement('label');
+    lab.style.marginRight = '1rem';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = true;
+    cb.onchange = function () { hidden[s.name] = !cb.checked; draw(); };
+    var sw = document.createElement('span');
+    sw.textContent = ' ● '; sw.style.color = s.color;
+    lab.appendChild(cb); lab.appendChild(sw); lab.appendChild(document.createTextNode(s.badge + ' ' + s.name));
+    legend.appendChild(lab);
+  });
+
+  function draw() {
+    var metric = document.querySelector('input[name=metric]:checked').value;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    [0, 25, 50, 75, 100].forEach(function (v) {
+      svg.appendChild(el('line', {x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: '#334155'}));
+      svg.appendChild(el('text', {x: L - 6, y: y(v) + 4, 'text-anchor': 'end', fill: '#94a3b8', 'font-size': 12}, v + '%'));
+    });
+    var step = Math.max(1, Math.ceil(maxN / 12));
+    for (var i = 1; i <= maxN; i += step)
+      svg.appendChild(el('text', {x: x(i), y: H - B + 18, 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': 12}, i));
+    svg.appendChild(el('text', {x: (L + W - R) / 2, y: H - 6, 'text-anchor': 'middle', fill: '#94a3b8', 'font-size': 12}, 'Partita n°'));
+    series.forEach(function (s) {
+      if (hidden[s.name]) return;
+      var pts = s.results.map(function (r, i) { return x(i + 1) + ',' + y(r[metric]); }).join(' ');
+      svg.appendChild(el('polyline', {points: pts, fill: 'none', stroke: s.color, 'stroke-width': 2.5, 'stroke-linejoin': 'round'}));
+      s.results.forEach(function (r, i) {
+        var c = el('circle', {cx: x(i + 1), cy: y(r[metric]), r: 4, fill: s.color});
+        c.appendChild(el('title', {}, s.name + ' · partita ' + (i + 1) + ' (' + r.date + ', ' + r.mode + ' ' + r.score + '): ' + r[metric] + '%'));
+        svg.appendChild(c);
+      });
+    });
+  }
+  document.querySelectorAll('input[name=metric]').forEach(function (r) { r.onchange = draw; });
+  draw();
+})();
+</script>
+{% endblock %}

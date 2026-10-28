@@ -1,0 +1,12 @@
+{% load league_tags %}
+<tr>
+  <td>{{ m.scheduled_at|date:"d/m H:i" }}</td>
+  <td><span class="badge">{{ m.mode }}</span></td>
+  <td>{% for p in m.team1.all %}{% player_name p %}{% if not forloop.last %} + {% endif %}{% endfor %}</td>
+  <td class="num">{% if m.played %}<strong>{{ m.score1 }} - {{ m.score2 }}</strong>{% else %}vs{% endif %}</td>
+  <td>{% for p in m.team2.all %}{% player_name p %}{% if not forloop.last %} + {% endif %}{% endfor %}</td>
+  <td class="num">
+    {% if not m.played %}<a class="btn" href="{% url 'match_result' m.pk %}">Risultato</a>{% endif %}
+    <form class="inline" method="post" action="{% url 'match_delete' m.pk %}" data-confirm="Eliminare la partita {% for p in m.team1.all %}{{ p.name }}{% if not forloop.last %} + {% endif %}{% endfor %} vs {% for p in m.team2.all %}{{ p.name }}{% if not forloop.last %} + {% endif %}{% endfor %}{% if m.played %} ({{ m.score1 }}-{{ m.score2 }}){% endif %}? L'azione non si può annullare.">{% csrf_token %}<button class="danger">✕</button></form>
+  </td>
+</tr>

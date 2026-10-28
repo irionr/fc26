@@ -1,0 +1,13 @@
+{% extends 'league/base.html' %}
+{% load league_tags %}
+{% block content %}
+<div class="card">
+  <h1>Giocatori</h1>
+  <form method="post">{% csrf_token %}{{ form.name }} <button>Aggiungi</button>{{ form.name.errors }}</form>
+  <table>
+    {% for p in players %}<tr><td>{% player_name p %}</td><td class="num">
+      <form class="inline" method="post" action="{% url 'player_delete' p.pk %}" onsubmit="return confirm('Eliminare {{ p.name|escapejs }}?')">{% csrf_token %}<button class="danger">✕</button></form>
+    </td></tr>{% endfor %}
+  </table>
+</div>
+{% endblock %}

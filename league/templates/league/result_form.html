@@ -1,0 +1,14 @@
+{% extends 'league/base.html' %}
+{% load league_tags %}
+{% block content %}
+<div class="card">
+  <h1>Risultato</h1>
+  <p>{% for p in match.team1.all %}{% player_name p %}{% if not forloop.last %} + {% endif %}{% endfor %} vs {% for p in match.team2.all %}{% player_name p %}{% if not forloop.last %} + {% endif %}{% endfor %} <span class="badge">{{ match.mode }}</span> — vincitori: +{{ match.points_per_winner }} punt{{ match.points_per_winner|pluralize:"o,i" }} ciascuno</p>
+  <form method="post">{% csrf_token %}
+    {{ form.non_field_errors }}
+    <p>{{ form.score1 }} - {{ form.score2 }}</p>
+    {{ form.score1.errors }}{{ form.score2.errors }}
+    <button>Salva</button>
+  </form>
+</div>
+{% endblock %}

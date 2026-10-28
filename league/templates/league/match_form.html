@@ -1,0 +1,18 @@
+{% extends 'league/base.html' %}
+{% block content %}
+<div class="card">
+  <h1>Nuova partita</h1>
+  {% if not players %}<p>Prima <a href="{% url 'players' %}">aggiungi dei giocatori</a>.</p>{% else %}
+  <form method="post">{% csrf_token %}
+    {{ form.non_field_errors }}
+    <p>{{ form.mode.label_tag }} {{ form.mode }}</p>
+    <p>{{ form.scheduled_at.label_tag }} {{ form.scheduled_at }} {{ form.scheduled_at.errors }}</p>
+    <div class="teams">
+      <div><h2>Squadra 1</h2>{{ form.team1 }}{{ form.team1.errors }}</div>
+      <div><h2>Squadra 2</h2>{{ form.team2 }}{{ form.team2.errors }}</div>
+    </div>
+    <button>Crea partita</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}
